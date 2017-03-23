@@ -9,7 +9,19 @@ This plugin is provided as is without any additional support.
 """
 # -*- coding: utf-8 -*-
 import subprocess, re, urllib, urllib2, random
-
+import codecs
+import os, sys
+from aqt import mw
+#### Init hanviet dictionary
+derivative_database = os.path.join(mw.pm.addonFolder(), "hanviet.csv")
+thedict = {}
+def init_dict():
+    """ Read the derivative file to memory """
+    f = codecs.open(derivative_database, 'r', 'utf8')
+    for line in f:
+        kanji, hanviet = line.strip().split("\t")
+        thedict[kanji] = hanviet
+    f.close()
 #### Get decomposition data
 def url( term ): return 'http://nihongo.monash.edu/cgi-bin/wwwjdic?1ZRU%s' % urllib.quote( term.encode('utf-8') )
 def gurl( term ): return 'http://nihongo.monash.edu/cgi-bin/wwwjdic?1ZMJ%s' % urllib.quote( term.encode('utf-8') )
@@ -55,12 +67,19 @@ from aqt.utils import showText, showInfo
 #### Update note with decomposition 
    
 def kSG( f ):
+   init_dict() 
    if f['KSG']: return
    fc = re.findall(u'([\u4e00-\u9fa5])', f['Expression'], re.UNICODE)
    random.shuffle(fc)
    fcs = ''.join(fc)
    for i in range(len(fcs)):
-        f[ 'KSG' ] += '<li> ' + kanjiGloss( fcs[i] ) + '<br/></li>'
+        chuhan = "NULL"
+        try:
+            word = fcs[i]
+            chuhan = thedict[word]
+        except:
+            chuhan = "NULL"
+        f[ 'KSG' ] += '<li> '+ '<b>( ' + word + ' ' + chuhan +' )</b> :<br/>  ' + kanjiGloss( word ) + '<br/></li>'
 
 def setupMenu( ed ):
 	a = QAction( 'Generate decompGloss', ed )
